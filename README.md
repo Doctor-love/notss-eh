@@ -1,4 +1,3 @@
 notss-eh
 ========
-
-notss-eh - A not so simple event-handler for Nagios
+#### _A Not So Simple Event-Handler for Nagios_
