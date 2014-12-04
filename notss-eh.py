@@ -13,6 +13,7 @@ try:
     import datetime
     import getpass
     import random
+    import time
     import os
 
 except ImportError as excp:
@@ -20,7 +21,7 @@ except ImportError as excp:
     exit(2)
 
 prog = 'notss-eh'
-version = '0.3'
+version = '0.4'
 
 
 # Parses command line arguments
@@ -335,7 +336,7 @@ def execactions(state, state_type, attempt, soft, attempt_exec):
 
 
 # Execution module for NRPE commands
-def execmod_nrpe(actions, host, nrpe_plugin, insecure, ignore):
+def execmod_nrpe(actions, wait, host, nrpe_plugin, insecure, ignore):
     logger = logging.getLogger('notss-eh')
 
     logger.info('Running NRPE commands on host "%s"' % host)
@@ -355,6 +356,10 @@ def execmod_nrpe(actions, host, nrpe_plugin, insecure, ignore):
     # Running all commands in actions
     for command in actions:
         logger.info('Running NRPE command "%s"' % command)
+
+        if wait:
+            logger.info('Waiting %i second(s) before command execution' % wait)
+            time.sleep(wait)
 
         if insecure:
             result = subprocess.Popen(
@@ -438,7 +443,7 @@ def main():
 
     # "Router for execution module selection
     if args.execmod == 'nrpe':
-        execmod_nrpe(actions, args.host, args.nrpe_plugin,
+        execmod_nrpe(actions, args.wait, args.host, args.nrpe_plugin,
                      args.insecure, args.ignore)
 
     else:
