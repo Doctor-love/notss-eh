@@ -20,7 +20,7 @@ except ImportError as excp:
     exit(2)
 
 prog = 'notss-eh'
-version = '0.2'
+version = '0.3'
 
 
 # Parses command line arguments
@@ -427,7 +427,7 @@ def main():
     else:
         exit(0)
 
-    if not actions:
+    if not actions or actions[0].lower() == 'skip':
         logger.info('No actions for state "%s" have been provided' % args.state)
         exit(0)
 
