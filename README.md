@@ -12,7 +12,7 @@ Currently it only supports executing "NRPE commands", but more modules are plann
 Features
 ========
 - Action execution on specified check attempt or soft state changes
-- Merlin check source detection (useful in peered setups)
+- Merlin check source detection using the "mon" command (useful in peered setups)
 - Easy to extend with new "execution modules"
 - Resonable logging to syslog or stdout
  
@@ -25,7 +25,7 @@ Execution modules
 
 Installation and configuration
 ==============================
-The main parts of the script uses nothing outside the Python 2.7 standard library (if you use it on EL7 you might need to install the "argparse" module), but the execution modules might have their own.
+The main parts of the script uses nothing outside the Python 2.7 standard library (if you use it on EL6 you might need to install the "argparse" module), but the execution modules might have their own.
 
 Download the "notss-eh.py" and place it in a suitable directory on the monitoring system(s).
 Some of the parameters should be set with Nagios macros - below is an example command configuration:
