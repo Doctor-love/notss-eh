@@ -17,11 +17,11 @@ try:
     import os
 
 except ImportError as excp:
-    print 'Error - could not import all required Python modules:\n\n"%s"' % excp
+    print 'Error - could not import all required Python modules:\n"%s"' % excp
     exit(2)
 
 prog = 'notss-eh'
-version = '0.4'
+version = '0.6'
 
 
 # Parses command line arguments
@@ -113,15 +113,17 @@ def aparser():
         'nrpe', help='Executes command(s) with NRPE queries')
 
     mod_nrpe.add_argument('-p', '--nrpe-plugin',
+                          dest='mod_nrpe_plugin',
                           help='Location of "check_nrpe" executable',
                           default='/opt/plugins/check_nrpe')
 
     mod_nrpe.add_argument('-i', '--insecure',
+                          dest='mod_insecure',
                           help='Disable encryption for connection',
                           action='store_true', default=False)
 
     mod_nrpe.add_argument(
-        '-I', '--ignore',
+        '-I', '--ignore', dest='mod_ignore',
         help='Ignore NRPE status output' +
         '(can be useful if the triggered plugin does not return any)',
         action='store_true', default=False)
@@ -317,8 +319,8 @@ def execactions(state, state_type, attempt, soft, attempt_exec):
                     'since check attempt matches attempt execution number')
 
     elif attempt_exec and attempt_exec != attempt:
-        logger.info('Adding no actions to execution list since check attempt ' +
-                    'did not match check attempt execution number')
+        logger.info('Adding no actions to execution list since check attempt' +
+                    ' did not match check attempt execution number')
 
         return False
 
@@ -406,8 +408,8 @@ def main():
 
     logger.debug('Provided arguments: "%s"' % args)
     logger.info(
-        'The event-handler has been started by user "%s" ' % getpass.getuser() +
-        'for host "%s" and service "%s". ' % (args.name, args.description))
+        'The event-handler has been started by user "%s"' % getpass.getuser() +
+        ' for host "%s" and service "%s". ' % (args.name, args.description))
 
     # Hack to check if this host is the check source for the service
     if args.checksrc and not checksrc(args.name, args.description):
@@ -433,7 +435,7 @@ def main():
         exit(0)
 
     if not actions or actions[0].lower() == 'skip':
-        logger.info('No actions for state "%s" have been provided' % args.state)
+        logger.info('No actions for state "%s" has been provided' % args.state)
         exit(0)
 
     else:
@@ -443,8 +445,8 @@ def main():
 
     # "Router for execution module selection
     if args.execmod == 'nrpe':
-        execmod_nrpe(actions, args.wait, args.host, args.nrpe_plugin,
-                     args.insecure, args.ignore)
+        execmod_nrpe(actions, args.wait, args.host, args.mod_nrpe_plugin,
+                     args.mod_insecure, args.mod_ignore)
 
     else:
         logger.error('Could not find execution module for "%s"' % args.execmod)
