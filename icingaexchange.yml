@@ -1,18 +1,18 @@
 name: notss-eh 
 description: "file:///README.md"
 url: "https://github.com/Doctor-love/notss-eh"
-tags: NRPE 
+tags: nrpe, ssh
 vendor: Other
 target: Miscellaneous
 type: Eventhandler
 license: gplv2
 releases: 
   - 
-    name: 0.6
-    description: "0.6 Release"
+    name: 0.7
+    description: "0.7 Release"
     files: 
       - 
         name: notss-eh 
         url: "file:///notss-eh.py"
         description: "Eventhandler script"
-        checksum: 5d83ae3cd5bfc957e9501f0da26eb032 
+        checksum: fa29cdc9cd2a504d7370050a4d97c9cb

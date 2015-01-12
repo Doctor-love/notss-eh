@@ -12,6 +12,7 @@ Currently it only supports executing "NRPE commands", but more modules are plann
 Features
 ========
 - Action execution on specified check attempt or soft state changes
+- Supports execution of multiple actions on state changes 
 - Merlin check source detection using the "mon" command (useful in peered setups)
 - Easy to extend with new "execution modules"
 - Resonable logging to syslog or stdout
@@ -22,6 +23,12 @@ Execution modules
   - Executes NRPE commands with the "check_nrpe" plugin
   - Supports result status verification
   - Dependencies: None
+
+- SSH 
+  - Executes commands over SSH
+  - Supports key and password authentication
+  - Dependencies: paramiko
+  - Notes: Paramiko (the Python SSH module) seems to have some problems with ECDSA host keys (https://github.com/paramiko/paramiko/issues/243). A work-around is to connect with "ssh -o HostKeyAlgorithms='ssh-rsa' user@host" when adding the host to "known_hosts". 
 
 Installation and configuration
 ==============================

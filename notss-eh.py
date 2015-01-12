@@ -21,7 +21,7 @@ except ImportError as excp:
     exit(2)
 
 prog = 'notss-eh'
-version = '0.6'
+version = '0.7'
 
 
 # Parses command line arguments
@@ -112,6 +112,10 @@ def aparser():
     mod_nrpe = mod.add_parser(
         'nrpe', help='Executes command(s) with NRPE queries')
 
+    mod_nrpe.add_argument('-H', '--host',
+                          dest='mod_host',
+                          help='Specify optional remote host for execution')
+
     mod_nrpe.add_argument('-p', '--nrpe-plugin',
                           dest='mod_nrpe_plugin',
                           help='Location of "check_nrpe" executable',
@@ -126,6 +130,52 @@ def aparser():
         '-I', '--ignore', dest='mod_ignore',
         help='Ignore NRPE status output' +
         '(can be useful if the triggered plugin does not return any)',
+        action='store_true', default=False)
+
+    # --------------------------------------------------------------------------
+    # Sub-parser for SSH execution module
+    mod_ssh = mod.add_parser(
+        'ssh', help='Executes command(s) with SSH')
+
+    mod_ssh.add_argument('-u', '--user',
+                         dest='mod_user',
+                         help='Username on remote host',
+                         required=True)
+
+    mod_ssh.add_argument('-H', '--host',
+                         dest='mod_host',
+                         help='Specify optional remote host for execution')
+
+    mod_ssh.add_argument('-p', '--port',
+                         dest='mod_port',
+                         help='SSH port on remote host',
+                         type=int, default=22)
+
+    # Allows the user to specify a password or private key for authentication
+    mod_ssh_auth = mod_ssh.add_mutually_exclusive_group(required=True)
+
+    mod_ssh_auth.add_argument(
+        '-k', '--private-key',
+        dest='mod_key',
+        help='OpenSSH compatible private key file for authentication')
+
+    mod_ssh_auth.add_argument(
+        '-P', '--password',
+        dest='mod_password',
+        help='Password for authentication (not recommended)')
+
+    # Allows the user to specify know host file or trust all host keys
+    mod_ssh_keypol = mod_ssh.add_mutually_exclusive_group(required=True)
+
+    mod_ssh_keypol.add_argument(
+        '-K', '--known-hosts',
+        dest='mod_known',
+        help='OpenSSH compatible known hosts file for host key verification')
+
+    mod_ssh_keypol.add_argument(
+        '-i', '--insecure',
+        dest='mod_insecure',
+        help='Automatically trust host key (not recommended)',
         action='store_true', default=False)
 
     # --------------------------------------------------------------------------
@@ -338,10 +388,18 @@ def execactions(state, state_type, attempt, soft, attempt_exec):
 
 
 # Execution module for NRPE commands
-def execmod_nrpe(actions, wait, host, nrpe_plugin, insecure, ignore):
+def execmod_nrpe(actions, wait, host, mod_host, nrpe_plugin, insecure, ignore):
     logger = logging.getLogger('notss-eh')
 
+    if mod_host:
+        logger.debug('A seperate execution host has been specified')
+
+        host = mod_host
+
     logger.info('Running NRPE commands on host "%s"' % host)
+
+    if insecure:
+        logger.info('NRPE session encryption has been disabled')
 
     if insecure:
         logger.info('NRPE session encryption has been disabled')
@@ -360,7 +418,9 @@ def execmod_nrpe(actions, wait, host, nrpe_plugin, insecure, ignore):
         logger.info('Running NRPE command "%s"' % command)
 
         if wait:
-            logger.info('Waiting %i second(s) before command execution' % wait)
+            logger.debug(
+                'Waiting %i second(s) before command execution' % wait)
+
             time.sleep(wait)
 
         if insecure:
@@ -390,6 +450,94 @@ def execmod_nrpe(actions, wait, host, nrpe_plugin, insecure, ignore):
         else:
             logger.info('Command execution successful - output: "%s"'
                         % result.communicate()[0].strip())
+
+    # Returning to main function does not do much ATM
+    return True
+
+
+# Execution module for SSH commands
+def execmod_ssh(actions, wait, host, user, mod_host,
+                port, key, password, known, insecure):
+
+    logger = logging.getLogger('notss-eh')
+
+    # Trying to import the Python SSH module
+    try:
+        import paramiko
+
+    except ImportError:
+        logger.error(
+            'Falied to import the Paramiko SSH module - exiting')
+
+        return False
+
+    if mod_host:
+        logger.debug('A seperate execution host has been specified')
+
+        host = mod_host
+
+    logger.info(
+        'Running SSH command(s) on host "%s:%i" as user "%s"'
+        % (host, port, user))
+
+    if key:
+        logger.info('Using private key for user authentication')
+
+    else:
+        logger.info('Using password for user authentication')
+
+    session = paramiko.SSHClient()
+
+    # Disables host key verification for SSH session
+    if insecure:
+        logger.info('SSH host key verification has been disabled')
+        session.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+    else:
+        logger.debug('Loading known hosts file from "%s"' % known)
+
+        try:
+            session.load_host_keys(known)
+
+        except IOError as emsg:
+            logger.error(
+                'Failed to load known hosts file: "%s"' % emsg)
+
+            return False
+
+    try:
+        session.connect(
+            host, username=user, port=port,
+            key_filename=key, password=password)
+
+        for action in actions:
+            if wait:
+                logger.debug(
+                    'Waiting %i second(s) before command execution' % wait)
+
+                time.sleep(wait)
+
+            logger.info('Executing command "%s" over SSH' % action)
+
+            stdin, stdout, stderr = session.exec_command(action)
+            stdin.close()
+
+            stdout = stdout.read()
+            stderr = stderr.read()
+
+            logger.info(
+                'Output of command "%s" - stdout: "%s", stderr: "%s"'
+                % (action, str(stdout).strip(), str(stderr).strip()))
+
+    except paramiko.SSHException as emsg:
+        logger.error('Failed to connect to host "%s": "%s"' % (host, emsg))
+
+        return False
+
+    session.close()
+
+    # Returning to main function does not do much ATM
+    return True
 
 
 # Main function
@@ -441,12 +589,20 @@ def main():
     else:
         logger.info('Added %i action(s) to execution list' % len(actions))
 
-    logger.debug('Actions for execution:\n\n"%s"' % actions)
+    logger.debug('Actions for execution: "%s"' % actions)
 
-    # "Router for execution module selection
+    # "Router" for execution module selection
     if args.execmod == 'nrpe':
-        execmod_nrpe(actions, args.wait, args.host, args.mod_nrpe_plugin,
-                     args.mod_insecure, args.mod_ignore)
+        execmod_nrpe(
+            actions, args.wait, args.host,
+            args.mod_host, args.mod_nrpe_plugin,
+            args.mod_insecure, args.mod_ignore)
+
+    if args.execmod == 'ssh':
+        execmod_ssh(
+            actions, args.wait, args.host,
+            args.mod_user, args.mod_host, args.mod_port,
+            args.mod_key, args.mod_password, args.mod_known, args.mod_insecure)
 
     else:
         logger.error('Could not find execution module for "%s"' % args.execmod)
