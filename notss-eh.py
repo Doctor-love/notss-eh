@@ -21,7 +21,7 @@ except ImportError as excp:
     exit(2)
 
 prog = 'notss-eh'
-version = '0.7'
+version = '0.8'
 
 
 # Parses command line arguments
@@ -179,7 +179,27 @@ def aparser():
         action='store_true', default=False)
 
     # --------------------------------------------------------------------------
+    # Sub-parser for shell execution module
+    mod_shell = mod.add_parser(
+        'shell', help='Executes local shell command(s)')
 
+    mod_shell.add_argument(
+        '-s', '--shell', dest='mod_shell_shell',
+        help='Specifies system shell',
+        choices=('/bin/sh', '/bin/bash', '/usr/local/bin/bash'),
+        default='/bin/sh')
+
+    mod_shell.add_argument(
+        '-r', '--returncode', dest='mod_shell_retcode',
+        help='Specify return code to verify successful execution of commands',
+        type=int)
+
+    mod_shell.add_argument(
+        '-m', '--mute', dest='mod_shell_mute',
+        help='Mute the output of the shell command',
+        action='store_true', default=False)
+
+    # --------------------------------------------------------------------------
     return parser.parse_args()
 
 
@@ -540,6 +560,66 @@ def execmod_ssh(actions, wait, host, user, mod_host,
     return True
 
 
+# Execution module for local system shell commands
+def execmod_shell(actions, wait, shell, returncode, mute):
+    logger = logging.getLogger('notss-eh')
+
+    logger.info(
+        'Executing %i commands with shell "%s"'
+        % (len(actions), shell))
+
+    if mute:
+        logger.debug('Shell command output muting is enabled')
+
+    if returncode or returncode == 0:
+        logger.debug(
+            'Verifying success of command execution with return code %i'
+            % returncode)
+
+    else:
+        logger.debug('Command execution result checking is disabled')
+
+    for action in actions:
+        if wait:
+            logger.debug(
+                'Waiting %i second(s) before command execution' % wait)
+
+            time.sleep(wait)
+
+        logger.info('Executing shell command "%s"' % action)
+
+        command = subprocess.Popen(
+            '%s' % action,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=shell)
+
+        command.wait()
+        output = command.communicate()
+
+        if not mute:
+            logger.info(
+                'Output of shell of command "%s":\nstdout: "%s"'
+                % (action, str(output[0]).strip()) +
+                '\nstderr: "%s"' % str(output[1]).strip())
+
+        if returncode is False:
+            continue
+
+        logger.debug('Checking return code for command "%s"' % action)
+
+        if command.returncode == returncode:
+            logger.info(
+                'Command "%s" executed successfully ' % action +
+                '(return code %i was matched)' % returncode)
+
+        else:
+            logger.error(
+                'Command "%s" did not execute successfully ' % action +
+                '(return code %i was not matched)' % returncode)
+
+    # Returning to main function does not do much ATM
+    return True
+
+
 # Main function
 def main():
     # Parses command line arguments
@@ -603,6 +683,11 @@ def main():
             actions, args.wait, args.host,
             args.mod_user, args.mod_host, args.mod_port,
             args.mod_key, args.mod_password, args.mod_known, args.mod_insecure)
+
+    if args.execmod == 'shell':
+        execmod_shell(
+            actions, args.wait, args.mod_shell_shell,
+            args.mod_shell_retcode, args.mod_shell_mute)
 
     else:
         logger.error('Could not find execution module for "%s"' % args.execmod)
