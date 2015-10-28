@@ -5,6 +5,9 @@
 Supports executing "actions" like NRPE commands - hopefully more in the future.
 Built and tested for use on RHEL 6 with op5 Monitor 7.0.2'''
 
+prog = 'notss-eh'
+version = '0.9'
+
 try:
     import argparse
     import logging
@@ -19,9 +22,8 @@ try:
 except ImportError as excp:
     print 'Error - could not import all required Python modules:\n"%s"' % excp
     exit(2)
-
-prog = 'notss-eh'
-version = '0.8'
+    
+logger = logging.getLogger('notss-eh')
 
 
 # Parses command line arguments
@@ -227,6 +229,8 @@ def logsetup(destination, verbose):
     loghandler.setFormatter(formatter)
     logger.addHandler(loghandler)
 
+    return logger
+
 
 # Non important function to generate data output
 def nothingtoseehere():
@@ -291,8 +295,6 @@ def nothingtoseehere():
 
 # Hack to check if this host is the check source for the object
 def checksrc(name, description):
-    logger = logging.getLogger('notss-eh')
-
     logger.info(
         'Trying to determine check source for host "%s" and service "%s"'
         % (name, description))
@@ -376,8 +378,6 @@ def checksrc(name, description):
 
 # Checks which, if any, actions should be executed
 def execactions(state, state_type, attempt, soft, attempt_exec):
-    logger = logging.getLogger('notss-eh')
-
     logger.info('Checking if any actions should be added to execution list')
 
     if soft:
@@ -409,8 +409,6 @@ def execactions(state, state_type, attempt, soft, attempt_exec):
 
 # Execution module for NRPE commands
 def execmod_nrpe(actions, wait, host, mod_host, nrpe_plugin, insecure, ignore):
-    logger = logging.getLogger('notss-eh')
-
     if mod_host:
         logger.debug('A seperate execution host has been specified')
 
@@ -478,8 +476,6 @@ def execmod_nrpe(actions, wait, host, mod_host, nrpe_plugin, insecure, ignore):
 # Execution module for SSH commands
 def execmod_ssh(actions, wait, host, user, mod_host,
                 port, key, password, known, insecure):
-
-    logger = logging.getLogger('notss-eh')
 
     # Trying to import the Python SSH module
     try:
@@ -562,8 +558,6 @@ def execmod_ssh(actions, wait, host, user, mod_host,
 
 # Execution module for local system shell commands
 def execmod_shell(actions, wait, shell, returncode, mute):
-    logger = logging.getLogger('notss-eh')
-
     logger.info(
         'Executing %i commands with shell "%s"'
         % (len(actions), shell))
@@ -631,8 +625,8 @@ def main():
         exit(3)
 
     # Configures application logging
-    logsetup(args.logging, args.verbose)
-    logger = logging.getLogger('notss-eh')
+    global logger
+    logger = logsetup(args.logging, args.verbose)
 
     logger.debug('Provided arguments: "%s"' % args)
     logger.info(
