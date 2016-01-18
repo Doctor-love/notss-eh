@@ -8,11 +8,11 @@ type: Eventhandler
 license: gplv2
 releases: 
   - 
-    name: 0.9.1
-    description: "0.9.1 Release"
+    name: 0.9.2
+    description: "0.9.2 Release"
     files: 
       - 
         name: notss-eh 
         url: "file:///notss-eh.py"
         description: "Eventhandler script"
-        checksum: a3e891b4dbc4d5904fe8ea6090c650c4
+        checksum: 1ca60610072eb8400bcce946f8396332

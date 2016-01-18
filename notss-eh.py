@@ -6,7 +6,7 @@ Supports executing "actions" like NRPE commands - hopefully more in the future.
 Built and tested for use on RHEL 6 with op5 Monitor 7.0.2'''
 
 prog = 'notss-eh'
-version = '0.9.1'
+version = '0.9.2'
 
 try:
     import argparse
