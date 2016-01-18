@@ -52,7 +52,7 @@ command_line: $USER1$/custom/notss-eh.py --host "$HOSTADDRESS$" --name "$HOSTNAM
 
 ```
 # Using notss-eh with source checking to execute local shell command with return code checking
-command_name: notss-eh-hard_checksrc-nrpe_insecure
+command_name: notss-eh-hard_checksrc-shell
 command_line: $USER1$/custom/notss-eh.py --host "$HOSTADDRESS$" --name "$HOSTNAME$" --description "$SERVICEDESC$" --state "$SERVICESTATE$" --state-type "$SERVICESTATETYPE$" --attempt "$SERVICEATTEMPT$" --ok "$ARG1$" --warning "$ARG2$" --critical "$ARG3$" --unknown "$ARG4$" -C -l syslog shell --returncode 0
 ```
 

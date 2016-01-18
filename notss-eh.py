@@ -6,7 +6,7 @@ Supports executing "actions" like NRPE commands - hopefully more in the future.
 Built and tested for use on RHEL 6 with op5 Monitor 7.0.2'''
 
 prog = 'notss-eh'
-version = '0.9'
+version = '0.9.1'
 
 try:
     import argparse
@@ -32,6 +32,9 @@ def aparser():
         description=__doc__,
         epilog='Written by Joel Rangsmo <joel@rangsmo.se>',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # Common phrases in help text
+    skip = '(use "skip" keyword to ignore action)'
 
     # Main arguments
     parser.add_argument(
@@ -59,15 +62,15 @@ def aparser():
         action='append')
 
     parser.add_argument(
-        '-w', '--warning', help='Action(s) executing on WARNING',
+        '-w', '--warning', help='Action(s) executing on WARNING %s' % skip,
         action='append')
 
     parser.add_argument(
-        '-c', '--critical', help='Action(s) executing on CRITICAL',
+        '-c', '--critical', help='Action(s) executing on CRITICAL %s' % skip,
         action='append')
 
     parser.add_argument(
-        '-u', '--unknown', help='Action(s) executing on UNKNOWN',
+        '-u', '--unknown', help='Action(s) executing on UNKNOWN %s' % skip,
         action='append')
 
     softexec = parser.add_mutually_exclusive_group()
@@ -629,6 +632,7 @@ def main():
     logger = logsetup(args.logging, args.verbose)
 
     logger.debug('Provided arguments: "%s"' % args)
+
     logger.info(
         'The event-handler has been started by user "%s"' % getpass.getuser() +
         ' for host "%s" and service "%s". ' % (args.name, args.description))
@@ -672,13 +676,13 @@ def main():
             args.mod_host, args.mod_nrpe_plugin,
             args.mod_insecure, args.mod_ignore)
 
-    if args.execmod == 'ssh':
+    elif args.execmod == 'ssh':
         execmod_ssh(
             actions, args.wait, args.host,
             args.mod_user, args.mod_host, args.mod_port,
             args.mod_key, args.mod_password, args.mod_known, args.mod_insecure)
 
-    if args.execmod == 'shell':
+    elif args.execmod == 'shell':
         execmod_shell(
             actions, args.wait, args.mod_shell_shell,
             args.mod_shell_retcode, args.mod_shell_mute)
