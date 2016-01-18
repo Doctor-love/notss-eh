@@ -446,7 +446,7 @@ def execmod_nrpe(actions, wait, host, mod_host, nrpe_plugin, insecure, ignore):
 
         if insecure:
             result = subprocess.Popen(
-                '%s -H %s -c %s' % (nrpe_plugin, host, command),
+                '%s -t 50 -H %s -c %s' % (nrpe_plugin, host, command),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
         else:
